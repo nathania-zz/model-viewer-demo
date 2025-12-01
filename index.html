@@ -20,13 +20,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        background-color: #fff;
       }
 
       model-viewer {
-        height: 100vh;          /* always fill the height */
-        width: 200vh;           
+        height: 100vh;
+        width: 200vh;
         display: block;
-}
       }
     </style>
   </head>
@@ -38,15 +38,10 @@
       camera-controls
       touch-action="pan-y"
       disable-zoom
-      interaction-prompt="auto">
+      auto-rotate
+      auto-rotate-delay="0"
+      rotation-per-second="30deg"
+      interaction-prompt="none">
     </model-viewer>
   </body>
 </html>
-
-<!-- A one-line comment -->
-
-<!--
-      src="https://models.readyplayer.me/6910ce6448062250a482a8e9.glb"
--->
-
-
