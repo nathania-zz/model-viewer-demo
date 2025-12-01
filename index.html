@@ -1,55 +1,504 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Coin – Upward Light</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Coin Lighting Playground</title>
 
-    <script
-      type="module"
-      src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js">
-    </script>
+  <!-- model-viewer -->
+  <script type="module"
+    src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js">
+  </script>
 
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        background-color: #000; /* dark background for contrast */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
+  <style>
+    :root {
+      --panel-bg: #0f1115;
+      --panel-fg: #e8ecf1;
+      --panel-accent: #5aa9ff;
+      --panel-muted: #aab3c2;
+    }
 
-      model-viewer {
-        height: 90vh;
-        width: 90vh;
-      }
-    </style>
-  </head>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #0b0c10;
+      color: var(--panel-fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
 
-  <body>
-    <model-viewer
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      grid-template-rows: 100vh;
+      gap: 0;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(1200px 600px at 50% 80%, #10131a 0%, #0b0c10 70%);
+    }
+
+    .panel {
+      background: var(--panel-bg);
+      border-left: 1px solid rgba(255,255,255,0.06);
+      padding: 16px 16px 20px;
+      overflow-y: auto;
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: .2px;
+    }
+
+    .panel h3 {
+      margin: 18px 0 8px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--panel-muted);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    .row label {
+      font-size: 14px;
+    }
+
+    .row input[type="range"] {
+      grid-column: 1 / span 2;
+      width: 100%;
+    }
+
+    .row input[type="color"] {
+      justify-self: end;
+      background: transparent;
+      border: none;
+      width: 32px;
+      height: 24px;
+      padding: 0;
+    }
+
+    .row input[type="checkbox"] {
+      justify-self: end;
+      width: 18px; height: 18px;
+      accent-color: var(--panel-accent);
+    }
+
+    .row select, .row input[type="number"], .row input[type="text"] {
+      justify-self: end;
+      background: #121621;
+      color: var(--panel-fg);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 13px;
+    }
+
+    .btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    button {
+      background: #121621;
+      color: var(--panel-fg);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--panel-accent);
+      border-color: var(--panel-accent);
+      color: #071422;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--panel-muted);
+      margin-top: -6px;
+      margin-bottom: 10px;
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* Compact number badges on the right of sliders */
+    .val {
+      font-variant-numeric: tabular-nums;
+      color: var(--panel-muted);
+      font-size: 12px;
+      justify-self: end;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Viewer -->
+    <model-viewer id="viewer"
       src="https://cdn.tinyglb.com/models/dab7f03a81d040b5be002050b7ff1ce5.glb"
       camera-controls
       auto-rotate
       rotation-per-second="30deg"
+      interaction-prompt="none"
       disable-zoom
       environment-image="neutral"
       exposure="1.1"
       shadow-intensity="1.2"
-      shadow-softness="0.7"
-      interaction-prompt="none">
-
-      <!-- Upward floor light -->
-      <directional-light intensity="2.5" color="#fff8e1" direction="0 1 0"></directional-light>
-
-      <!-- Subtle blue rim light for edge definition -->
-      <directional-light intensity="1.2" color="#80caff" direction="0.5 0.5 -1"></directional-light>
-
-      <!-- Gentle overhead light for balance -->
-      <directional-light intensity="0.8" color="#ffe0b0" direction="0 -1 0"></directional-light>
-
+      shadow-softness="0.6">
+      <!-- Lights (we’ll control these from the UI) -->
+      <!-- Floor (uplight) -->
+      <directional-light id="lightFloor" intensity="2.5" color="#fff8e1" direction="0 1 0"></directional-light>
+      <!-- Rim -->
+      <directional-light id="lightRim" intensity="1.2" color="#80caff" direction="0.5 0.5 -1"></directional-light>
+      <!-- Overhead -->
+      <directional-light id="lightTop" intensity="0.8" color="#ffe0b0" direction="0 -1 0"></directional-light>
     </model-viewer>
-  </body>
+
+    <!-- Controls -->
+    <aside class="panel">
+      <h2>Lighting & Motion Playground</h2>
+      <div class="small">Tweak environment, rotation, and three lights (floor/up, rim, overhead) in real time.</div>
+
+      <h3>Environment</h3>
+      <div class="row">
+        <label for="env">HDRI</label>
+        <select id="env">
+          <option value="neutral">neutral (studio)</option>
+          <option value="https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k.hdr">spruit_sunrise (warm)</option>
+          <option value="https://modelviewer.dev/shared-assets/environments/moonless_golf_1k.hdr">moonless_golf (cool)</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="exposure">Exposure</label>
+        <span class="val" id="exposureVal">1.10</span>
+        <input type="range" id="exposure" min="0.4" max="2.0" step="0.01" value="1.1">
+      </div>
+      <div class="row">
+        <label for="shadowIntensity">Shadow Intensity</label>
+        <span class="val" id="shadowIntensityVal">1.20</span>
+        <input type="range" id="shadowIntensity" min="0" max="3" step="0.05" value="1.2">
+      </div>
+      <div class="row">
+        <label for="shadowSoftness">Shadow Softness</label>
+        <span class="val" id="shadowSoftnessVal">0.60</span>
+        <input type="range" id="shadowSoftness" min="0" max="1" step="0.01" value="0.6">
+      </div>
+
+      <h3>Rotation</h3>
+      <div class="row">
+        <label for="autoRotate">Auto Rotate</label>
+        <input type="checkbox" id="autoRotate" checked>
+      </div>
+      <div class="row">
+        <label for="speed">Speed (deg/s)</label>
+        <span class="val" id="speedVal">30</span>
+        <input type="range" id="speed" min="0" max="120" step="1" value="30">
+      </div>
+
+      <h3>Floor Light (Up)</h3>
+      <div class="row">
+        <label for="floorOn">Enabled</label>
+        <input type="checkbox" id="floorOn" checked>
+      </div>
+      <div class="row two">
+        <div class="row">
+          <label>Intensity</label>
+          <span class="val" id="floorIntVal">2.50</span>
+          <input type="range" id="floorInt" min="0" max="6" step="0.05" value="2.5">
+        </div>
+        <div class="row">
+          <label>Color</label>
+          <input type="color" id="floorColor" value="#fff8e1">
+        </div>
+      </div>
+      <div class="row">
+        <label>Direction (x y z)</label>
+        <input type="text" id="floorDir" value="0 1 0" placeholder="e.g. 0 1 0">
+      </div>
+
+      <h3>Rim Light</h3>
+      <div class="row">
+        <label for="rimOn">Enabled</label>
+        <input type="checkbox" id="rimOn" checked>
+      </div>
+      <div class="row two">
+        <div class="row">
+          <label>Intensity</label>
+          <span class="val" id="rimIntVal">1.20</span>
+          <input type="range" id="rimInt" min="0" max="6" step="0.05" value="1.2">
+        </div>
+        <div class="row">
+          <label>Color</label>
+          <input type="color" id="rimColor" value="#80caff">
+        </div>
+      </div>
+      <div class="row">
+        <label>Direction (x y z)</label>
+        <input type="text" id="rimDir" value="0.5 0.5 -1" placeholder="e.g. 0.5 0.5 -1">
+      </div>
+
+      <h3>Overhead Light</h3>
+      <div class="row">
+        <label for="topOn">Enabled</label>
+        <input type="checkbox" id="topOn" checked>
+      </div>
+      <div class="row two">
+        <div class="row">
+          <label>Intensity</label>
+          <span class="val" id="topIntVal">0.80</span>
+          <input type="range" id="topInt" min="0" max="6" step="0.05" value="0.8">
+        </div>
+        <div class="row">
+          <label>Color</label>
+          <input type="color" id="topColor" value="#ffe0b0">
+        </div>
+      </div>
+      <div class="row">
+        <label>Direction (x y z)</label>
+        <input type="text" id="topDir" value="0 -1 0" placeholder="e.g. 0 -1 0">
+      </div>
+
+      <div class="btns">
+        <button id="reset">Reset</button>
+        <button class="primary" id="museum">Preset: Museum</button>
+        <button id="studio">Preset: Studio</button>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const $ = sel => document.querySelector(sel);
+
+    const viewer = $('#viewer');
+
+    // Lights
+    const lightFloor = $('#lightFloor');
+    const lightRim = $('#lightRim');
+    const lightTop = $('#lightTop');
+
+    // Controls
+    const env = $('#env');
+    const exposure = $('#exposure'); const exposureVal = $('#exposureVal');
+    const shadowIntensity = $('#shadowIntensity'); const shadowIntensityVal = $('#shadowIntensityVal');
+    const shadowSoftness = $('#shadowSoftness'); const shadowSoftnessVal = $('#shadowSoftnessVal');
+
+    const autoRotate = $('#autoRotate');
+    const speed = $('#speed'); const speedVal = $('#speedVal');
+
+    const floorOn = $('#floorOn');
+    const floorInt = $('#floorInt'); const floorIntVal = $('#floorIntVal');
+    const floorColor = $('#floorColor');
+    const floorDir = $('#floorDir');
+
+    const rimOn = $('#rimOn');
+    const rimInt = $('#rimInt'); const rimIntVal = $('#rimIntVal');
+    const rimColor = $('#rimColor');
+    const rimDir = $('#rimDir');
+
+    const topOn = $('#topOn');
+    const topInt = $('#topInt'); const topIntVal = $('#topIntVal');
+    const topColor = $('#topColor');
+    const topDir = $('#topDir');
+
+    const btnReset = $('#reset');
+    const btnMuseum = $('#museum');
+    const btnStudio = $('#studio');
+
+    // Helpers
+    function setAttr(el, key, val) { el.setAttribute(key, String(val)); }
+    function fmt(n, dp=2) { return Number(n).toFixed(dp); }
+    function parseDir(text, fallback) {
+      const parts = (text || '').trim().split(/\s+/).map(Number).filter(n => !Number.isNaN(n));
+      return (parts.length === 3) ? parts.join(' ') : fallback;
+    }
+
+    // Bindings
+    env.addEventListener('change', () => setAttr(viewer, 'environment-image', env.value));
+
+    exposure.addEventListener('input', () => {
+      setAttr(viewer, 'exposure', exposure.value);
+      exposureVal.textContent = fmt(exposure.value);
+    });
+
+    shadowIntensity.addEventListener('input', () => {
+      setAttr(viewer, 'shadow-intensity', shadowIntensity.value);
+      shadowIntensityVal.textContent = fmt(shadowIntensity.value);
+    });
+
+    shadowSoftness.addEventListener('input', () => {
+      setAttr(viewer, 'shadow-softness', shadowSoftness.value);
+      shadowSoftnessVal.textContent = fmt(shadowSoftness.value);
+    });
+
+    autoRotate.addEventListener('change', () => {
+      if (autoRotate.checked) setAttr(viewer, 'auto-rotate', '');
+      else viewer.removeAttribute('auto-rotate');
+    });
+
+    speed.addEventListener('input', () => {
+      speedVal.textContent = speed.value;
+      const v = Number(speed.value);
+      if (v <= 0) {
+        viewer.removeAttribute('auto-rotate');
+        autoRotate.checked = false;
+      } else {
+        setAttr(viewer, 'rotation-per-second', `${v}deg`);
+        if (!autoRotate.checked) {
+          autoRotate.checked = true;
+          setAttr(viewer, 'auto-rotate', '');
+        }
+      }
+    });
+
+    // Floor light
+    floorOn.addEventListener('change', () => {
+      lightFloor.style.display = floorOn.checked ? '' : 'none';
+    });
+    floorInt.addEventListener('input', () => {
+      setAttr(lightFloor, 'intensity', floorInt.value);
+      floorIntVal.textContent = fmt(floorInt.value);
+    });
+    floorColor.addEventListener('input', () => setAttr(lightFloor, 'color', floorColor.value));
+    floorDir.addEventListener('change', () => {
+      setAttr(lightFloor, 'direction', parseDir(floorDir.value, '0 1 0'));
+      floorDir.value = lightFloor.getAttribute('direction');
+    });
+
+    // Rim light
+    rimOn.addEventListener('change', () => {
+      lightRim.style.display = rimOn.checked ? '' : 'none';
+    });
+    rimInt.addEventListener('input', () => {
+      setAttr(lightRim, 'intensity', rimInt.value);
+      rimIntVal.textContent = fmt(rimInt.value);
+    });
+    rimColor.addEventListener('input', () => setAttr(lightRim, 'color', rimColor.value));
+    rimDir.addEventListener('change', () => {
+      setAttr(lightRim, 'direction', parseDir(rimDir.value, '0.5 0.5 -1'));
+      rimDir.value = lightRim.getAttribute('direction');
+    });
+
+    // Top light
+    topOn.addEventListener('change', () => {
+      lightTop.style.display = topOn.checked ? '' : 'none';
+    });
+    topInt.addEventListener('input', () => {
+      setAttr(lightTop, 'intensity', topInt.value);
+      topIntVal.textContent = fmt(topInt.value);
+    });
+    topColor.addEventListener('input', () => setAttr(lightTop, 'color', topColor.value));
+    topDir.addEventListener('change', () => {
+      setAttr(lightTop, 'direction', parseDir(topDir.value, '0 -1 0'));
+      topDir.value = lightTop.getAttribute('direction');
+    });
+
+    // Presets
+    function applyMuseum() {
+      env.value = "https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k.hdr";
+      env.dispatchEvent(new Event('change'));
+
+      exposure.value = 1.0; exposure.dispatchEvent(new Event('input'));
+      shadowIntensity.value = 1.5; shadowIntensity.dispatchEvent(new Event('input'));
+      shadowSoftness.value = 0.6; shadowSoftness.dispatchEvent(new Event('input'));
+
+      autoRotate.checked = true; autoRotate.dispatchEvent(new Event('change'));
+      speed.value = 30; speed.dispatchEvent(new Event('input'));
+
+      floorOn.checked = true; floorOn.dispatchEvent(new Event('change'));
+      floorInt.value = 2.5; floorInt.dispatchEvent(new Event('input'));
+      floorColor.value = '#fff8e1'; floorColor.dispatchEvent(new Event('input'));
+      floorDir.value = '0 1 0'; floorDir.dispatchEvent(new Event('change'));
+
+      rimOn.checked = true; rimOn.dispatchEvent(new Event('change'));
+      rimInt.value = 1.2; rimInt.dispatchEvent(new Event('input'));
+      rimColor.value = '#80caff'; rimColor.dispatchEvent(new Event('input'));
+      rimDir.value = '0.5 0.5 -1'; rimDir.dispatchEvent(new Event('change'));
+
+      topOn.checked = true; topOn.dispatchEvent(new Event('change'));
+      topInt.value = 0.8; topInt.dispatchEvent(new Event('input'));
+      topColor.value = '#ffe0b0'; topColor.dispatchEvent(new Event('input'));
+      topDir.value = '0 -1 0'; topDir.dispatchEvent(new Event('change'));
+    }
+
+    function applyStudio() {
+      env.value = "neutral"; env.dispatchEvent(new Event('change'));
+
+      exposure.value = 1.4; exposure.dispatchEvent(new Event('input'));
+      shadowIntensity.value = 1.2; shadowIntensity.dispatchEvent(new Event('input'));
+      shadowSoftness.value = 0.5; shadowSoftness.dispatchEvent(new Event('input'));
+
+      autoRotate.checked = true; autoRotate.dispatchEvent(new Event('change'));
+      speed.value = 20; speed.dispatchEvent(new Event('input'));
+
+      floorOn.checked = true; floorOn.dispatchEvent(new Event('change'));
+      floorInt.value = 1.8; floorInt.dispatchEvent(new Event('input'));
+      floorColor.value = '#ffffff'; floorColor.dispatchEvent(new Event('input'));
+      floorDir.value = '0 1 0'; floorDir.dispatchEvent(new Event('change'));
+
+      rimOn.checked = true; rimOn.dispatchEvent(new Event('change'));
+      rimInt.value = 0.9; rimInt.dispatchEvent(new Event('input'));
+      rimColor.value = '#e6f3ff'; rimColor.dispatchEvent(new Event('input'));
+      rimDir.value = '0.7 0.4 -0.6'; rimDir.dispatchEvent(new Event('change'));
+
+      topOn.checked = true; topOn.dispatchEvent(new Event('change'));
+      topInt.value = 1.2; topInt.dispatchEvent(new Event('input'));
+      topColor.value = '#ffffff'; topColor.dispatchEvent(new Event('input'));
+      topDir.value = '0 -1 0'; topDir.dispatchEvent(new Event('change'));
+    }
+
+    function applyReset() {
+      env.value = "neutral"; env.dispatchEvent(new Event('change'));
+
+      exposure.value = 1.1; exposure.dispatchEvent(new Event('input'));
+      shadowIntensity.value = 1.2; shadowIntensity.dispatchEvent(new Event('input'));
+      shadowSoftness.value = 0.6; shadowSoftness.dispatchEvent(new Event('input'));
+
+      autoRotate.checked = true; autoRotate.dispatchEvent(new Event('change'));
+      speed.value = 30; speed.dispatchEvent(new Event('input'));
+
+      floorOn.checked = true; floorOn.dispatchEvent(new Event('change'));
+      floorInt.value = 2.5; floorInt.dispatchEvent(new Event('input'));
+      floorColor.value = '#fff8e1'; floorColor.dispatchEvent(new Event('input'));
+      floorDir.value = '0 1 0'; floorDir.dispatchEvent(new Event('change'));
+
+      rimOn.checked = true; rimOn.dispatchEvent(new Event('change'));
+      rimInt.value = 1.2; rimInt.dispatchEvent(new Event('input'));
+      rimColor.value = '#80caff'; rimColor.dispatchEvent(new Event('input'));
+      rimDir.value = '0.5 0.5 -1'; rimDir.dispatchEvent(new Event('change'));
+
+      topOn.checked = true; topOn.dispatchEvent(new Event('change'));
+      topInt.value = 0.8; topInt.dispatchEvent(new Event('input'));
+      topColor.value = '#ffe0b0'; topColor.dispatchEvent(new Event('input'));
+      topDir.value = '0 -1 0'; topDir.dispatchEvent(new Event('change'));
+    }
+
+    btnMuseum.addEventListener('click', applyMuseum);
+    btnStudio.addEventListener('click', applyStudio);
+    btnReset.addEventListener('click', applyReset);
+
+    // Initialize labels
+    exposure.dispatchEvent(new Event('input'));
+    shadowIntensity.dispatchEvent(new Event('input'));
+    shadowSoftness.dispatchEvent(new Event('input'));
+    floorInt.dispatchEvent(new Event('input'));
+    rimInt.dispatchEvent(new Event('input'));
+    topInt.dispatchEvent(new Event('input'));
+    speed.dispatchEvent(new Event('input'));
+  </script>
+</body>
 </html>
